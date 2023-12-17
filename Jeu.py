@@ -34,6 +34,9 @@ def Jeu(queueToInterface, queueToJeu):
     nombreSteps = 1000
     multiplicateurTrajectoire = 1 # Le plus grand c'est, le moins precis la trajectoire devient mais augmente la quantite projetee
 
+    lastMousPos = None
+    dragging = False
+
     # Statistique
     intervaleDePerformanceUpdate = 10 # Temps en seconde entre evaluations de performance
 
@@ -62,6 +65,7 @@ def Jeu(queueToInterface, queueToJeu):
     Renderer = []
 
     def EventHandler():
+        nonlocal dragging, lastMousPos, actualizerPositions
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -70,6 +74,23 @@ def Jeu(queueToInterface, queueToJeu):
                     pygame.quit()
             if event.type == pygame.MOUSEWHEEL:
                 mainScreen.camera.AddZoom(event.y * -CameraScrollSpeed)
+
+            if pygame.mouse.get_pressed()[0] == True:
+                for Body in Bodies:
+                    position = Body.sprite.realPosition
+                    radius = Body.sprite.realRadius
+                    rect = pygame.Rect(position[0], position[1], radius * 2, radius * 2)
+                    if rect.collidepoint(event.pos):
+                        if not dragging:
+                            dragging = True
+                            lastMousPos = event.pos
+                        else:
+                            Body.position = [Body.position[0] + (event.pos[0] - lastMousPos[0]) * mainScreen.camera.scale, Body.position[1] + (event.pos[1] - lastMousPos[1]) * mainScreen.camera.scale]
+                            lastMousPos = event.pos
+                            actualizerPositions = True
+            if event.type == MOUSEBUTTONUP:
+                dragging = False
+
 
         # Keyboard movement
         keys = pygame.key.get_pressed()
@@ -142,7 +163,7 @@ def Jeu(queueToInterface, queueToJeu):
             multiprocessingIntake()
 
 
-            # Trajectories Renderer       
+            # Trajectories Render       
             if dessinerTrajectoires and actualizerPositions:
                 startTime = time.time()
 
